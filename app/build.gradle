@@ -1,0 +1,68 @@
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 28
+  buildToolsVersion "29.0.2"
+
+  signingConfigs {
+    debug {
+      keyAlias "androiddebugkey"
+      keyPassword "android"
+      storeFile file("../key/hy40a.keystore")
+      storePassword "android"
+    }
+    release {
+      keyAlias "androiddebugkey"
+      keyPassword "android"
+      storeFile file("../key/hy40a.keystore")
+      storePassword "android"
+    }
+  }
+
+  defaultConfig {
+    applicationId "com.android.providers.tv"
+    minSdkVersion 28
+    targetSdkVersion 28
+    versionCode 66666
+    versionName "66666"
+    testApplicationId "com.android.providers.tv.tests"
+    testInstrumentationRunner "android.test.InstrumentationTestRunner"
+  }
+
+  buildTypes {
+    debug {
+      signingConfig signingConfigs.debug
+    }
+    release {
+      signingConfig release.signingConfig
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+    }
+  }
+}
+
+dependencies {
+  compileOnly files('libs/framework.jar')
+  //    compileOnly 'com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3'
+  //    compileOnly 'org.robovm:robovm-rt:+'
+}
+
+preBuild {
+  doLast {
+    def imlFile = file(project.name + ".iml")
+    println 'Change ' + project.name + '.iml order'
+    try {
+      def parsedXml = (new XmlParser()).parse(imlFile)
+      def jdkNode = parsedXml.component[1].orderEntry.find { it.'@type' == 'jdk' }
+      parsedXml.component[1].remove(jdkNode)
+      def sdkString = "Android API " + android.compileSdkVersion.substring("android-".length()) +
+          " Platform"
+      new Node(parsedXml.component[1], 'orderEntry',
+          ['type': 'jdk', 'jdkName': sdkString, 'jdkType': 'Android SDK'])
+      groovy.xml.XmlUtil.serialize(parsedXml, new FileOutputStream(imlFile))
+    } catch (FileNotFoundException e) {
+      // nop, iml not found
+    }
+  }
+}
+
